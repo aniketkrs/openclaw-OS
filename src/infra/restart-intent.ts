@@ -440,8 +440,11 @@ function readGatewayRestartIntentPayloadSync(
         ...(typeof parsed.wait_ms === "number" ? { waitMs: Math.floor(parsed.wait_ms) } : {}),
       };
     }
-  } catch {
-    return null;
+  } catch (err) {
+    // A transient state-DB failure must not be mistaken for "no intent":
+    // the row is kept so a later consume can still restart the gateway.
+    restartLog.warn(`failed to read gateway restart intent: ${String(err)}`);
+    throw err;
   }
   return null;
 }
@@ -450,7 +453,14 @@ export function consumeGatewayRestartIntentPayloadSync(
   env: NodeJS.ProcessEnv = process.env,
   now = Date.now(),
 ): GatewayRestartIntent | null {
-  const payload = readGatewayRestartIntentPayloadSync(env);
+  let payload: GatewayRestartIntentPayload | null;
+  try {
+    payload = readGatewayRestartIntentPayloadSync(env);
+  } catch {
+    // Read failure: keep the intent row in place (already logged above) so
+    // the pending restart is not silently degraded to a plain stop.
+    return null;
+  }
   clearGatewayRestartIntentSync(env);
   if (!payload) {
     return null;
