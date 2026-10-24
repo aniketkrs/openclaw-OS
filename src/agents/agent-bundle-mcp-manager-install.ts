@@ -17,8 +17,6 @@ import type {
   SessionMcpRequesterScope,
   SessionMcpRuntime,
 } from "./agent-bundle-mcp-types.js";
-import { formatErrorMessage } from "../infra/errors.js";
-import { logWarn } from "../logger.js";
 import { allowMcpAppModelContext, revokeMcpAppModelContext } from "./mcp-app-model-context.js";
 import {
   MCP_CONNECTION_REVALIDATE_MS,
@@ -151,24 +149,7 @@ export function createSessionMcpRuntimeManagerInstall(
         store.runtimesBySessionId.set(runtimeKey, runtime);
       }
       if (existing) {
-        // A predecessor whose cleanup could not be confirmed must not veto
-        // installing its replacement: the failure was already recorded when
-        // it happened (see recordAgentCleanupFailure in the runtime), so
-        // swallow only that known error here and rethrow anything else.
-        previousCleanup = lifecycle
-          .disposeRuntime(runtimeKey, existing, false)
-          .catch((error: unknown) => {
-            if (
-              error instanceof Error &&
-              error.message.includes("MCP runtime cleanup could not confirm closure")
-            ) {
-              logWarn(
-                `MCP runtime replacement proceeding despite unconfirmed predecessor cleanup (${formatErrorMessage(error)})`,
-              );
-              return;
-            }
-            throw error;
-          });
+        previousCleanup = lifecycle.disposeRuntime(runtimeKey, existing, false);
         await previousCleanup;
       }
       runtime ??= await store.createRuntime({
