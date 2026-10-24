@@ -32,7 +32,6 @@ import {
   type ProcessSession,
 } from "./bash-process-registry.js";
 import {
-  appendExecCompletionRelevanceGuidance,
   appendExecTimeoutRetryGuidance,
   compactNotifyOutput,
   renderExecExitLabel,
@@ -379,9 +378,7 @@ export async function maybeNotifyOnExit(
   const summary = output
     ? `Exec ${status} (${session.id.slice(0, 8)}, ${exitLabel}) :: ${output}`
     : `Exec ${status} (${session.id.slice(0, 8)}, ${exitLabel})`;
-  const eventText = appendExecCompletionRelevanceGuidance(
-    appendExecTimeoutRetryGuidance(summary, session.exitReason),
-  );
+  const eventText = appendExecTimeoutRetryGuidance(summary, session.exitReason);
   const eventSessionKey =
     session.notifySessionTarget?.sessionKey ??
     resolveEventSessionKeyForPolicy(sessionKey, session.eventRouting);
