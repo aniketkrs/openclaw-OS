@@ -49,6 +49,10 @@ export const EXEC_MANUAL_COLLECTION_FOLLOW_UP =
   "Automatic completion wake is disabled for this command. If the task needs this result, use poll with a timeout to collect it before ending the turn, unless another continuation is already arranged.";
 export const EXEC_TIMEOUT_RETRY_GUIDANCE =
   "The command was terminated, but external side effects may already have completed. Verify the resulting state before retrying. Do not automatically rerun commands unless repeating them is safe. Use a higher timeout only when the command is known to be safe to retry.";
+// Restores the relevance guidance dropped after #162302: completion wakes are
+// model-visible turns in group chats, so the agent must know when to stay silent.
+export const EXEC_COMPLETION_RELEVANCE_GUIDANCE =
+  "This is an automatic background completion notice, not a new user request. Report requested results not yet delivered, meaningful outcome changes, or new actionable failures. Stay silent for routine, duplicate, superseded, or already-recovered results.";
 
 // Irreversible loss leads model-visible output so later head-preserving caps retain it.
 export const EXEC_RETENTION_CAP_NOTE =
@@ -74,6 +78,11 @@ export function renderExecExitLabel(exit: {
 export function renderExecUpdateText(params: { tailText?: string; warnings: string[] }): string {
   const warningText = params.warnings.length ? `${params.warnings.join("\n")}\n\n` : "";
   return warningText + renderExecOutputText(params.tailText);
+}
+
+/** Add relevance guidance so completion wakes stay silent for routine results. */
+export function appendExecCompletionRelevanceGuidance(text: string): string {
+  return `${text}\n\n${EXEC_COMPLETION_RELEVANCE_GUIDANCE}`;
 }
 
 /** Add retry-safety guidance only for supervisor timeout exits. */
