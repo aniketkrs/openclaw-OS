@@ -12,7 +12,7 @@ it("reacquires MCP tools after a failed server's DELETE times out beside a healt
   const deleteStarted = createDeferred();
   const finishDelete = createDeferred();
   const deadline = new AbortController();
-  const originalTimeout = AbortSignal.timeout;
+  const originalTimeout = AbortSignal.timeout.bind(AbortSignal);
   const timeout = vi
     .spyOn(AbortSignal, "timeout")
     .mockImplementation((ms) => (ms === 5_000 ? deadline.signal : originalTimeout(ms)));
